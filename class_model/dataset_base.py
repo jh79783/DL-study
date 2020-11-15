@@ -13,12 +13,12 @@ class DatasetBase:
     def __str__(self):
         return '({}+{}+{})'.format(len(self.tr_xs), len(self.te_xs), len(self.va_xs))
 
-    def dataset_get_train_data(self, batch_size, nth):
+    def dataset_get_train_data(self, batch_size, nth, indices):
         from_idx = nth * batch_size
         to_idx = (nth + 1) * batch_size
 
-        tr_X = self.tr_xs[from_idx:to_idx]
-        tr_Y = self.tr_ys[from_idx:to_idx]
+        tr_X = self.tr_xs[indices[from_idx:to_idx]]
+        tr_Y = self.tr_ys[indices[from_idx:to_idx]]
         return tr_X, tr_Y
 
     def dataset_get_test_data(self):
@@ -29,6 +29,8 @@ class DatasetBase:
         indices = np.arange(len(self.tr_xs))
         # print(indices)
         np.random.shuffle(indices)
+
+        return indices
 
     def dataset_get_validate_data(self, count):
         indices = np.arange(len(self.va_xs))
