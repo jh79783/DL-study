@@ -25,10 +25,10 @@ class DatasetBase:
         return self.te_xs, self.te_ys
 
     def dataset_shuffle_train_data(self):
+        # print(len(self.tr_xs))
         indices = np.arange(len(self.tr_xs))
+        # print(indices)
         np.random.shuffle(indices)
-        self.tr_xs = self.tr_xs[indices]
-        self.tr_ys = self.tr_ys[indices]
 
     def dataset_get_validate_data(self, count):
         indices = np.arange(len(self.va_xs))
@@ -60,6 +60,7 @@ class DatasetBase:
 
         self.input_shape = xs[0].shape
         self.output_shape = ys[0].shape
+
 
     def visualize(self, xs, estimates, answers):
         pass
