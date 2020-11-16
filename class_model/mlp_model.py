@@ -45,9 +45,9 @@ class MlpModel(ModelBase):
         for epoch in range(epoch_count):
             costs = []
             accs = []
-            self.dataset.dataset_shuffle_train_data()
+            indices = self.dataset.dataset_shuffle_train_data()
             for n in range(batch_count):
-                trX, trY = self.dataset.dataset_get_train_data(batch_size, n)
+                trX, trY = self.dataset.dataset_get_train_data(batch_size, n, indices)
                 cost, acc = self.train_step(trX, trY)
                 costs.append(cost)
                 accs.append(acc)

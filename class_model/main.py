@@ -14,8 +14,8 @@ def main():
 
     data = dataset.Flower_DataSet()
     mode = modelmode.Select()
-    model = mm.MlpModel("abalone_model", data, mode, [20])
-    model.exec_all(epoch_count=50, report=10, learning_rate=0.001)
+    model = mm.MlpModel("abalone_model", data, mode, [30,10])
+    model.exec_all(epoch_count=10, report=2, learning_rate=0.001)
 
 
 if __name__ == '__main__':
