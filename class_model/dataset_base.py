@@ -16,16 +16,17 @@ class DatasetBase:
     def dataset_get_test_data(self):
         return self.te_xs, self.te_ys
 
-    def dataset_shuffle_train_data(self,size):
-        self.indices = np.arange(size)
-        np.random.shuffle(self.indices)
+    def dataset_shuffle_train_data(self):
+        indices = np.arange(len(self.tr_xs))
+        np.random.shuffle(indices)
+		return indices
 
     def dataset_get_train_data(self, batch_size, nth):
         from_idx = nth * batch_size
         to_idx = (nth + 1) * batch_size
 
-        tr_X = self.tr_xs[self.indices[from_idx:to_idx]]
-        tr_Y = self.tr_ys[self.indices[from_idx:to_idx]]
+        tr_X = self.tr_xs[indices[from_idx:to_idx]]
+        tr_Y = self.tr_ys[indices[from_idx:to_idx]]
         return tr_X, tr_Y
 
     def dataset_get_validate_data(self, count):
