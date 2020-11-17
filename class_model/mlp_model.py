@@ -37,7 +37,7 @@ class MlpModel(ModelBase):
         self.learning_rate = learning_rate
 
         batch_count = int(self.dataset.train_count / batch_size)
-
+        print(batch_size * batch_count)
         time1 = time2 = int(time.time())
         if report != 0:
             print('Model {} train started:'.format(self.name))
@@ -47,7 +47,7 @@ class MlpModel(ModelBase):
             accs = []
             indices = self.dataset.dataset_shuffle_train_data()
             for n in range(batch_count):
-                trX, trY = self.dataset.dataset_get_train_data(batch_size, n, indices)
+                trX, trY = self.dataset.dataset_get_train_data(batch_size, n,indices)
                 cost, acc = self.train_step(trX, trY)
                 costs.append(cost)
                 accs.append(acc)
