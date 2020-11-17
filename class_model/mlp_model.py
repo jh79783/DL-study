@@ -47,7 +47,7 @@ class MlpModel(ModelBase):
             accs = []
             indices = self.dataset.dataset_shuffle_train_data()
             for n in range(batch_count):
-                trX, trY = self.dataset.dataset_get_train_data(batch_size, n, indices)
+                trX, trY = self.dataset.dataset_get_train_data(batch_size, n,indices)
                 cost, acc = self.train_step(trX, trY)
                 costs.append(cost)
                 accs.append(acc)

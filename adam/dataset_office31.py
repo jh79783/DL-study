@@ -6,11 +6,14 @@ import numpy as np
 
 # noinspection PyCallByClass
 class Office31Dataset(DatasetBase):
-    def __init__(self, ):
+    def __init__(self, resolution=None, input_shape=None):
 
         super(Office31Dataset, self).__init__()
-        resolution = [100, 100]
-        input_shape = [-1]
+
+        if resolution is None:
+            resolution = [100, 100]
+        if input_shape is None:
+            input_shape = [-1]
         path = '../data/domain_adaptation_images'
         domain_names = mu.list_dir(path)
 
@@ -46,8 +49,7 @@ class Office31Dataset(DatasetBase):
         self.cnts = [len(domain_names)]
 
     def visualize(self, xs, estimates, answers):
-
-        print(" office visualize ")
+        # print(" office visualize ")
         # print(f"estimates{estimates}\n{answers}")
         mu.draw_images_horz(xs, self.image_shape)
         # print(f"estimates type {type(estimates)} shape {estimates.shape}")

@@ -76,10 +76,13 @@ class Pulsar_Select_DataSet(DatasetBase):
 
 
 class Flower_DataSet(DatasetBase):
-    def __init__(self):
+    def __init__(self, resolution=None, input_shape=None):
         super(Flower_DataSet, self).__init__()
-        resolution = [100, 100]
-        input_shape = [-1]
+
+        if resolution is None:
+            resolution = [100, 100]
+        if input_shape is None:
+            input_shape = [-1]
         path = '../data/flowers'
         self.target_names = mu.list_dir(path)
 
@@ -104,5 +107,3 @@ class Flower_DataSet(DatasetBase):
     def visualize(self, xs, estimates, answers):
         mu.draw_images_horz(xs, self.image_shape)
         mu.show_select_results(estimates, answers, self.target_names)
-
-

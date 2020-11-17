@@ -19,9 +19,9 @@ class DatasetBase:
     def dataset_shuffle_train_data(self):
         indices = np.arange(len(self.tr_xs))
         np.random.shuffle(indices)
-		return indices
+        return indices
 
-    def dataset_get_train_data(self, batch_size, nth):
+    def dataset_get_train_data(self, batch_size, nth,indices):
         from_idx = nth * batch_size
         to_idx = (nth + 1) * batch_size
 
