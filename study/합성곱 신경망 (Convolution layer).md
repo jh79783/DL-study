@@ -19,7 +19,7 @@
 
 > 입력데이터 = 가로\*세로\*채널 
 
-앞의 공식에 의해 100\*100\*3=30000개를 입력데이터로 사용하였다. 이것이 fully conneceted layer인데, 이것의 문제점은 **데이터의 형상이 무시**된다는 것이다. (같은 차원의 뉴런으로 취급)
+앞의 공식에 의해 앞서 사용한 flower data는 100\*100\*3=30000개를 입력데이터로 사용하였다. 이것이 fully conneceted layer인데, 이것의 문제점은 **데이터의 형상이 무시**된다는 것이다. (같은 차원의 뉴런으로 취급)
 이미지 데이터는 3차원 공간에서 다음과 같은 많은 정보가 내포되어 있다.
 
 > RGB채널의 연관성
@@ -37,7 +37,7 @@
 ## 합성곱 연산
 
 합성곱 연산을 통하여 feature map을 출력한다.
-합성곱층에서는 커널 혹은 필터라고 불리는 n\*m의 매트릭스?를 사용한다.
+합성곱층에서는 커널 혹은 필터라고 불리는 n\*m의 매트릭스를 사용한다.
 즉, 이 커널이 합성곱층에서의 가중치 파라미터 Weight에 해당하게 되며 이를 통해 feature map을 출력하여 다음 층으로 전달한다.
 
 ![합성곱 연산](..\img\합성곱 연산.jpg)
@@ -97,7 +97,7 @@ $$
 $$
 
 $$
-\delta^{I}_{k,m,n}=\frac{\partial{L}}{\partial{\bold{X}^{(I)}_{k,m,n}}}\\=\sum^{F^{(I+1)}_{H}-1}_{p=0}\sum^{F^{(I+1)}_{W}-1}_{q=0}\frac{\partial{L}}{\partial{\bold{X}^{(I+1)}_{k,(m-p),(n-q)}}}\frac{\partial\bold{X}^{(I+1)}_{k,(m-p),(n-q)}}{\partial\bold{X}^{(I)}_{k,m,n}}\\=\sum^{F^{(I+1)}_H-1}_{p=0}\sum^{F^{(I+1)}_W-1}_{q=0}\delta^{(I+1)}_{k,(m-p),(n-q)}\frac{\partial\bold{X}^{(I+1)}_{k,(m-p),(n-q)}}{\partial{\bold{X}^{(I)}_{k,m,n}}}\\=\sum^{F^{(I+1)}_H-1}_{p=0}\sum^{F^{(I+1)}_W-1}_{q=0}\delta^{(I+1)}_{k,(m-p),(n-q)}\frac{\partial}{\partial\bold{X}^{(I)}_{k,m,n}}\{\sum^{F^{(I+1)}_H-1}_{r=0}\sum^{F^{(I+1)}_W-1}_{s=0}\bold{W}^{(I+1)}_{k,r,s}f(\bold{X}^{(I)}_{k,(m-p+r),(n-q+s)})\\m-p+r=m(r=p),n-q+s=n(s=q)\\threfore\\\frac{\partial\bold{X}^{(I+1)}_{k,(m-p),(n-q)}}{\partial{\bold{X}^{(I)}_{k,m,n}}}=\frac{\partial}{\partial\bold{X}^{(I)}_{k,p,q}}\{\bold{W}^{(I+1)}_{k,p,q}f(\bold{X}^{(I)}_{k,m,n})\}\\=\bold{W}^{(I+1)}_{k,p,q}f'(\bold{X}^{I}_{k,m,n})\\\delta^{I}_{k,m,n}=\sum^{F^{(I+1)}_H-1}_{p=0}\sum^{F^{(I+1)}_W-1}_{q=0}\delta^{(I+1)}_{k,(m-p),(n-q)}\bold{W}^{(I+1)}_{k,p,q}f'(\bold{X}^{I}_{k,m,n})
+\delta^{I}_{k,m,n}=\frac{\partial{L}}{\partial{\bold{X}^{(I)}_{k,m,n}}}\\=\sum^{F^{(I+1)}_{H}-1}_{p=0}\sum^{F^{(I+1)}_{W}-1}_{q=0}\frac{\partial{L}}{\partial{\bold{X}^{(I+1)}_{k,(m-p),(n-q)}}}\frac{\partial\bold{X}^{(I+1)}_{k,(m-p),(n-q)}}{\partial\bold{X}^{(I)}_{k,m,n}}\\=\sum^{F^{(I+1)}_H-1}_{p=0}\sum^{F^{(I+1)}_W-1}_{q=0}\delta^{(I+1)}_{k,(m-p),(n-q)}\frac{\partial\bold{X}^{(I+1)}_{k,(m-p),(n-q)}}{\partial{\bold{X}^{(I)}_{k,m,n}}}\\=\sum^{F^{(I+1)}_H-1}_{p=0}\sum^{F^{(I+1)}_W-1}_{q=0}\delta^{(I+1)}_{k,(m-p),(n-q)}\frac{\partial}{\partial\bold{X}^{(I)}_{k,m,n}}\{\sum^{F^{(I+1)}_H-1}_{r=0}\sum^{F^{(I+1)}_W-1}_{s=0}\bold{W}^{(I+1)}_{k,r,s}f(\bold{X}^{(I)}_{k,(m-p+r),(n-q+s)})\}\\m-p+r=m(r=p),n-q+s=n(s=q)항\\threfore\\\frac{\partial\bold{X}^{(I+1)}_{k,(m-p),(n-q)}}{\partial{\bold{X}^{(I)}_{k,m,n}}}=\frac{\partial}{\partial\bold{X}^{(I)}_{k,p,q}}\{\bold{W}^{(I+1)}_{k,p,q}f(\bold{X}^{(I)}_{k,m,n})\}\\=\bold{W}^{(I+1)}_{k,p,q}f'(\bold{X}^{I}_{k,m,n})\\\delta^{I}_{k,m,n}=\sum^{F^{(I+1)}_H-1}_{p=0}\sum^{F^{(I+1)}_W-1}_{q=0}\delta^{(I+1)}_{k,(m-p),(n-q)}\bold{W}^{(I+1)}_{k,p,q}f'(\bold{X}^{I}_{k,m,n})
 $$
 
 따라서 최종적으로 $\bold{W}^{(I)}_{k,i,j}$에 대한 L의 gradient는 다음과 같다.
