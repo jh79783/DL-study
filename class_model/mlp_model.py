@@ -37,7 +37,6 @@ class MlpModel(ModelBase):
         self.learning_rate = learning_rate
 
         batch_count = int(self.dataset.train_count / batch_size)
-        print(batch_size * batch_count)
         time1 = time2 = int(time.time())
         if report != 0:
             print('Model {} train started:'.format(self.name))
@@ -93,6 +92,7 @@ class MlpModel(ModelBase):
         return loss, accuracy
 
     def forward_neuralnet(self, x):
+        # print(x.shape)
         hidden = x
         aux_layers = []
 

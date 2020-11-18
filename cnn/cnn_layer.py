@@ -1,53 +1,17 @@
-from adam.adam_model import AdamModel
+# from adam.adam_model import AdamModel
 import class_model.mathutil as mu
-import cnn.cnn_method as cm
+import cnn.cnn_assist_function as cm
 import numpy as np
+from cnn.cnn_model_base import CnnModelBasic
 
 
-class CnnBasicModel(AdamModel):
-    def __init__(self, name, dataset, mode, hconfigs, show_maps=False, use_adam=True):
-        if isinstance(hconfigs, list) and not isinstance(hconfigs[0], (list, int)):
-            hconfigs = [hconfigs]
-        self.show_maps = show_maps
-        self.need_maps = False
-        self.kernels = []
-        super(CnnBasicModel, self).__init__(name, dataset, mode, hconfigs, use_adam)
+# from cnn.cnn_model import CnnModel
 
-    def alloc_layer_param(self, input_shape, hconfig):
-        print("cnn alloc_layer_param")
-        layer_type = cm.get_layer_type(hconfig)
 
-        m_name = 'alloc_{}_layer'.format(layer_type)
-        method = getattr(self, m_name)
-        pm, output_shape = method(input_shape, hconfig)
 
-        return pm, output_shape
-
-    def forward_layer(self, x, hconfig, pm):
-        print("cnn forward_layer")
-        layer_type = cm.get_layer_type(hconfig)
-        print(f"layer_type: {layer_type}")
-
-        m_name = 'forward_{}_layer'.format(layer_type)
-        print(f"m_name: {m_name}")
-        method = getattr(self, m_name)
-        print(f"method: {method}")
-        y, aux = method(x, hconfig, pm)
-
-        return y, aux
-
-    def backprop_layer(self, G_y, hconfig, pm, aux):
-        print("cnn backprop_layer")
-        layer_type = cm.get_layer_type(hconfig)
-
-        m_name = 'backprop_{}_layer'.format(layer_type)
-        method = getattr(self, m_name)
-        G_input = method(G_y, hconfig, pm, aux)
-
-        return G_input
-
+class Fully(CnnModelBasic):
     def alloc_full_layer(self, input_shape, hconfig):
-        print("cnn alloc_full_layer")
+        # print("cnn alloc_full_layer")
         input_cnt = np.prod(input_shape)
         output_cnt = cm.get_conf_param(hconfig, 'width', hconfig)
 
@@ -56,33 +20,8 @@ class CnnBasicModel(AdamModel):
 
         return {'w': weight, 'b': bias}, [output_cnt]
 
-    def alloc_conv_layer(self, input_shape, hconfig):
-        print("cnn alloc_conv_layer")
-        assert len(input_shape) == 3
-        xh, xw, xchn = input_shape
-        kh, kw = cm.get_conf_param_2d(hconfig, 'ksize')
-        ychn = cm.get_conf_param(hconfig, 'chn')
-
-        kernel = np.random.normal(0, self.rand_std, [kh, kw, xchn, ychn])
-        bias = np.zeros([ychn])
-
-        if self.show_maps: self.kernels.append(kernel)
-
-        return {'k': kernel, 'b': bias}, [xh, xw, ychn]
-
-    def alloc_pool_layer(self, input_shape, hconfig):
-        print("cnn alloc_pool_layer")
-        assert len(input_shape) == 3
-        xh, xw, xchn = input_shape
-        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
-
-        assert xh % sh == 0
-        assert xw % sw == 0
-
-        return {}, [xh // sh, xw // sw, xchn]
-
     def forward_full_layer(self, x, hconfig, pm):
-        print("cnn forward_full_layer")
+        # print("cnn forward_full_layer")
         if pm is None: return x, None
 
         x_org_shape = x.shape
@@ -97,7 +36,7 @@ class CnnBasicModel(AdamModel):
         return y, [x, y, x_org_shape]
 
     def backprop_full_layer(self, G_y, hconfig, pm, aux):
-        print("cnn backprop_full_layer")
+        # print("cnn backprop_full_layer")
         if pm is None: return G_y
 
         x, y, x_org_shape = aux
@@ -116,42 +55,24 @@ class CnnBasicModel(AdamModel):
 
         return G_input.reshape(x_org_shape)
 
-    def activate(self, affine, hconfig):
-        print("cnn activate")
-        if hconfig is None: return affine
 
-        func = cm.get_conf_param(hconfig, 'actfunc', 'relu')
 
-        if func == 'none':
-            return affine
-        elif func == 'relu':
-            return mu.relu(affine)
-        elif func == 'sigmoid':
-            return mu.sigmoid(affine)
-        elif func == 'tanh':
-            return mu.tanh(affine)
-        else:
-            assert 0
+class Convolution(CnnModelBasic):
+    def alloc_conv_layer(self, input_shape, hconfig):
+        assert len(input_shape) == 3
+        xh, xw, xchn = input_shape
+        kh, kw = cm.get_conf_param_2d(hconfig, 'ksize')
+        ychn = cm.get_conf_param(hconfig, 'chn')
 
-    def activate_derv(self, G_y, y, hconfig):
-        print("cnn activate_derv")
-        if hconfig is None: return G_y
+        kernel = np.random.normal(0, self.rand_std, [kh, kw, xchn, ychn])
+        bias = np.zeros([ychn])
 
-        func = cm.get_conf_param(hconfig, 'actfunc', 'relu')
+        if self.show_maps: self.kernels.append(kernel)
 
-        if func == 'none':
-            return G_y
-        elif func == 'relu':
-            return mu.relu_derv(y) * G_y
-        elif func == 'sigmoid':
-            return mu.sigmoid_derv(y) * G_y
-        elif func == 'tanh':
-            return mu.tanh_derv(y) * G_y
-        else:
-            assert 0
+        return {'k': kernel, 'b': bias}, [xh, xw, ychn]
 
     def forward_conv_layer_adhoc(self, x, hconfig, pm):
-        print("cnn forward_conv_layer_adhoc")
+        # print("cnn forward_conv_layer_adhoc")
         mb_size, xh, xw, xchn = x.shape
         kh, kw, _, ychn = pm['k'].shape
 
@@ -177,7 +98,7 @@ class CnnBasicModel(AdamModel):
         return y, [x, y]
 
     def forward_conv_layer_better(self, x, hconfig, pm):
-        print("cnn forward_conv_layer_better")
+        # print("cnn forward_conv_layer_better")
         mb_size, xh, xw, xchn = x.shape
         kh, kw, _, ychn = pm['k'].shape
 
@@ -203,12 +124,15 @@ class CnnBasicModel(AdamModel):
         return y, [x, y]
 
     def forward_conv_layer(self, x, hconfig, pm):
-        print("cnn forward_conv_layer")
+        # print("cnn forward_conv_layer")
+
         mb_size, xh, xw, xchn = x.shape
         kh, kw, _, ychn = pm['k'].shape
 
         x_flat = cm.get_ext_regions_for_conv(x, kh, kw)
+
         k_flat = pm['k'].reshape([kh * kw * xchn, ychn])
+        print(x_flat.shape)
         conv_flat = np.matmul(x_flat, k_flat)
         conv = conv_flat.reshape([mb_size, xh, xw, ychn])
 
@@ -219,7 +143,7 @@ class CnnBasicModel(AdamModel):
         return y, [x_flat, k_flat, x, y]
 
     def backprop_conv_layer(self, G_y, hconfig, pm, aux):
-        print("cnn backprop_conv_layer")
+        # print("cnn backprop_conv_layer")
         x_flat, k_flat, x, y = aux
 
         kh, kw, xchn, ychn = pm['k'].shape
@@ -244,43 +168,21 @@ class CnnBasicModel(AdamModel):
 
         return G_input
 
-    def forward_avg_layer(self, x, hconfig, pm):
-        print("cnn forward_avg_layer")
-        mb_size, xh, xw, chn = x.shape
+
+class Max_Pooling(CnnModelBasic):
+    def alloc_max_layer(self, input_shape, hconfig):
+        # print("cnn alloc_pool_layer")
+        assert len(input_shape) == 3
+        xh, xw, xchn = input_shape
         sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
-        yh, yw = xh // sh, xw // sw
 
-        x1 = x.reshape([mb_size, yh, sh, yw, sw, chn])
-        x2 = x1.transpose(0, 1, 3, 5, 2, 4)
-        x3 = x2.reshape([-1, sh * sw])
+        assert xh % sh == 0
+        assert xw % sw == 0
 
-        y_flat = np.average(x3, 1)
-        y = y_flat.reshape([mb_size, yh, yw, chn])
-
-        if self.need_maps: self.maps.append(y)
-
-        return y, None
-
-    def backprop_avg_layer(self, G_y, hconfig, pm, aux):
-        print("cnn backprop_avg_layer")
-        mb_size, yh, yw, chn = G_y.shape
-        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
-        xh, xw = yh * sh, yw * sw
-
-        gy_flat = G_y.flatten() / (sh * sw)
-
-        gx1 = np.zeros([mb_size * yh * yw * chn, sh * sw], dtype='float32')
-        for i in range(sh * sw):
-            gx1[:, i] = gy_flat
-        gx2 = gx1.reshape([mb_size, yh, yw, chn, sh, sw])
-        gx3 = gx2.transpose([0, 1, 4, 2, 5, 3])
-
-        G_input = gx3.reshape([mb_size, xh, xw, chn])
-
-        return G_input
+        return {}, [xh // sh, xw // sw, xchn]
 
     def forward_max_layer(self, x, hconfig, pm):
-        print("cnn forward_max_layer")
+        # print("cnn forward_max_layer")
         mb_size, xh, xw, chn = x.shape
         sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
         yh, yw = xh // sh, xw // sw
@@ -298,7 +200,7 @@ class CnnBasicModel(AdamModel):
         return y, idxs
 
     def backprop_max_layer(self, G_y, hconfig, pm, aux):
-        print("cnn backprop_max_layer")
+        # print("cnn backprop_max_layer")
         idxs = aux
 
         mb_size, yh, yw, chn = G_y.shape
@@ -316,28 +218,50 @@ class CnnBasicModel(AdamModel):
 
         return G_input
 
-    def visualize(self, num):
-        print("cnn visualize")
-        print('Model {} Visualization'.format(self.name))
 
-        self.need_maps = self.show_maps
-        self.maps = []
+class Avg_Pooling(CnnModelBasic):
+    def alloc_avg_layer(self, input_shape, hconfig):
+        # print("cnn alloc_pool_layer")
+        assert len(input_shape) == 3
+        xh, xw, xchn = input_shape
+        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
 
-        deX, deY = self.dataset.get_visualize_data(num)
-        est = self.get_estimate(deX)
+        assert xh % sh == 0
+        assert xw % sw == 0
 
-        if self.show_maps:
-            for kernel in self.kernels:
-                kh, kw, xchn, ychn = kernel.shape
-                grids = kernel.reshape([kh, kw, -1]).transpose(2, 0, 1)
-                mu.draw_images_horz(grids[0:5, :, :])
+        return {}, [xh // sh, xw // sw, xchn]
 
-            for pmap in self.maps:
-                mu.draw_images_horz(pmap[:, :, :, 0])
+    def forward_avg_layer(self, x, hconfig, pm):
+        # print("cnn forward_avg_layer")
+        mb_size, xh, xw, chn = x.shape
+        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
+        yh, yw = xh // sh, xw // sw
 
-        self.dataset.visualize(deX, est, deY)
+        x1 = x.reshape([mb_size, yh, sh, yw, sw, chn])
+        x2 = x1.transpose(0, 1, 3, 5, 2, 4)
+        x3 = x2.reshape([-1, sh * sw])
 
-        self.need_maps = False
-        self.maps = None
+        y_flat = np.average(x3, 1)
+        y = y_flat.reshape([mb_size, yh, yw, chn])
 
+        if self.need_maps: self.maps.append(y)
 
+        return y, None
+
+    def backprop_avg_layer(self, G_y, hconfig, pm, aux):
+        # print("cnn backprop_avg_layer")
+        mb_size, yh, yw, chn = G_y.shape
+        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
+        xh, xw = yh * sh, yw * sw
+
+        gy_flat = G_y.flatten() / (sh * sw)
+
+        gx1 = np.zeros([mb_size * yh * yw * chn, sh * sw], dtype='float32')
+        for i in range(sh * sw):
+            gx1[:, i] = gy_flat
+        gx2 = gx1.reshape([mb_size, yh, yw, chn, sh, sw])
+        gx3 = gx2.transpose([0, 1, 4, 2, 5, 3])
+
+        G_input = gx3.reshape([mb_size, xh, xw, chn])
+
+        return G_input
