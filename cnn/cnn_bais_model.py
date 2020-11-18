@@ -1,5 +1,6 @@
 from adam.adam_model import AdamModel
 import class_model.mathutil as mu
+import cnn.cnn_method as cm
 import numpy as np
 
 
@@ -14,7 +15,7 @@ class CnnBasicModel(AdamModel):
 
     def alloc_layer_param(self, input_shape, hconfig):
         print("cnn alloc_layer_param")
-        layer_type = get_layer_type(hconfig)
+        layer_type = cm.get_layer_type(hconfig)
 
         m_name = 'alloc_{}_layer'.format(layer_type)
         method = getattr(self, m_name)
@@ -24,7 +25,7 @@ class CnnBasicModel(AdamModel):
 
     def forward_layer(self, x, hconfig, pm):
         print("cnn forward_layer")
-        layer_type = get_layer_type(hconfig)
+        layer_type = cm.get_layer_type(hconfig)
         print(f"layer_type: {layer_type}")
 
         m_name = 'forward_{}_layer'.format(layer_type)
@@ -37,7 +38,7 @@ class CnnBasicModel(AdamModel):
 
     def backprop_layer(self, G_y, hconfig, pm, aux):
         print("cnn backprop_layer")
-        layer_type = get_layer_type(hconfig)
+        layer_type = cm.get_layer_type(hconfig)
 
         m_name = 'backprop_{}_layer'.format(layer_type)
         method = getattr(self, m_name)
@@ -48,7 +49,7 @@ class CnnBasicModel(AdamModel):
     def alloc_full_layer(self, input_shape, hconfig):
         print("cnn alloc_full_layer")
         input_cnt = np.prod(input_shape)
-        output_cnt = get_conf_param(hconfig, 'width', hconfig)
+        output_cnt = cm.get_conf_param(hconfig, 'width', hconfig)
 
         weight = np.random.normal(0, self.rand_std, [input_cnt, output_cnt])
         bias = np.zeros([output_cnt])
@@ -59,8 +60,8 @@ class CnnBasicModel(AdamModel):
         print("cnn alloc_conv_layer")
         assert len(input_shape) == 3
         xh, xw, xchn = input_shape
-        kh, kw = get_conf_param_2d(hconfig, 'ksize')
-        ychn = get_conf_param(hconfig, 'chn')
+        kh, kw = cm.get_conf_param_2d(hconfig, 'ksize')
+        ychn = cm.get_conf_param(hconfig, 'chn')
 
         kernel = np.random.normal(0, self.rand_std, [kh, kw, xchn, ychn])
         bias = np.zeros([ychn])
@@ -73,7 +74,7 @@ class CnnBasicModel(AdamModel):
         print("cnn alloc_pool_layer")
         assert len(input_shape) == 3
         xh, xw, xchn = input_shape
-        sh, sw = get_conf_param_2d(hconfig, 'stride')
+        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
 
         assert xh % sh == 0
         assert xw % sw == 0
@@ -119,7 +120,7 @@ class CnnBasicModel(AdamModel):
         print("cnn activate")
         if hconfig is None: return affine
 
-        func = get_conf_param(hconfig, 'actfunc', 'relu')
+        func = cm.get_conf_param(hconfig, 'actfunc', 'relu')
 
         if func == 'none':
             return affine
@@ -136,7 +137,7 @@ class CnnBasicModel(AdamModel):
         print("cnn activate_derv")
         if hconfig is None: return G_y
 
-        func = get_conf_param(hconfig, 'actfunc', 'relu')
+        func = cm.get_conf_param(hconfig, 'actfunc', 'relu')
 
         if func == 'none':
             return G_y
@@ -206,7 +207,7 @@ class CnnBasicModel(AdamModel):
         mb_size, xh, xw, xchn = x.shape
         kh, kw, _, ychn = pm['k'].shape
 
-        x_flat = get_ext_regions_for_conv(x, kh, kw)
+        x_flat = cm.get_ext_regions_for_conv(x, kh, kw)
         k_flat = pm['k'].reshape([kh * kw * xchn, ychn])
         conv_flat = np.matmul(x_flat, k_flat)
         conv = conv_flat.reshape([mb_size, xh, xw, ychn])
@@ -236,7 +237,7 @@ class CnnBasicModel(AdamModel):
         G_bias = np.sum(G_conv_flat, axis=0)
 
         G_kernel = G_k_flat.reshape([kh, kw, xchn, ychn])
-        G_input = undo_ext_regions_for_conv(G_x_flat, x, kh, kw)
+        G_input = cm.undo_ext_regions_for_conv(G_x_flat, x, kh, kw)
 
         self.update_param(pm, 'k', G_kernel)
         self.update_param(pm, 'b', G_bias)
@@ -246,7 +247,7 @@ class CnnBasicModel(AdamModel):
     def forward_avg_layer(self, x, hconfig, pm):
         print("cnn forward_avg_layer")
         mb_size, xh, xw, chn = x.shape
-        sh, sw = get_conf_param_2d(hconfig, 'stride')
+        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
         yh, yw = xh // sh, xw // sw
 
         x1 = x.reshape([mb_size, yh, sh, yw, sw, chn])
@@ -263,7 +264,7 @@ class CnnBasicModel(AdamModel):
     def backprop_avg_layer(self, G_y, hconfig, pm, aux):
         print("cnn backprop_avg_layer")
         mb_size, yh, yw, chn = G_y.shape
-        sh, sw = get_conf_param_2d(hconfig, 'stride')
+        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
         xh, xw = yh * sh, yw * sw
 
         gy_flat = G_y.flatten() / (sh * sw)
@@ -281,7 +282,7 @@ class CnnBasicModel(AdamModel):
     def forward_max_layer(self, x, hconfig, pm):
         print("cnn forward_max_layer")
         mb_size, xh, xw, chn = x.shape
-        sh, sw = get_conf_param_2d(hconfig, 'stride')
+        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
         yh, yw = xh // sh, xw // sw
 
         x1 = x.reshape([mb_size, yh, sh, yw, sw, chn])
@@ -301,7 +302,7 @@ class CnnBasicModel(AdamModel):
         idxs = aux
 
         mb_size, yh, yw, chn = G_y.shape
-        sh, sw = get_conf_param_2d(hconfig, 'stride')
+        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
         xh, xw = yh * sh, yw * sw
 
         gy_flat = G_y.flatten()
@@ -340,79 +341,3 @@ class CnnBasicModel(AdamModel):
         self.maps = None
 
 
-def get_layer_type(hconfig):
-    print("cnn get_layer_type")
-    if not isinstance(hconfig, list): return 'full'
-    return hconfig[0]
-
-
-def get_conf_param(hconfig, key, defval=None):
-    print("cnn get_conf_param")
-    if not isinstance(hconfig, list): return defval
-    if len(hconfig) <= 1: return defval
-    if not key in hconfig[1]: return defval
-    return hconfig[1][key]
-
-
-def get_conf_param_2d(hconfig, key, defval=None):
-    print("cnn get_conf_param_2d")
-    if len(hconfig) <= 1: return defval
-    if not key in hconfig[1]: return defval
-    val = hconfig[1][key]
-    if isinstance(val, list): return val
-    return [val, val]
-
-
-def get_ext_regions_for_conv(x, kh, kw):
-    print("cnn get_ext_regions_for_conv")
-    mb_size, xh, xw, xchn = x.shape
-
-    regs = get_ext_regions(x, kh, kw, 0)
-    regs = regs.transpose([2, 0, 1, 3, 4, 5])
-
-    return regs.reshape([mb_size * xh * xw, kh * kw * xchn])
-
-
-def get_ext_regions(x, kh, kw, fill):
-    print("cnn get_ext_regions")
-    mb_size, xh, xw, xchn = x.shape
-
-    eh, ew = xh + kh - 1, xw + kw - 1
-    bh, bw = (kh - 1) // 2, (kw - 1) // 2
-
-    x_ext = np.zeros((mb_size, eh, ew, xchn), dtype='float32') + fill
-    x_ext[:, bh:bh + xh, bw:bw + xw, :] = x
-
-    regs = np.zeros((xh, xw, mb_size * kh * kw * xchn), dtype='float32')
-
-    for r in range(xh):
-        for c in range(xw):
-            regs[r, c, :] = x_ext[:, r:r + kh, c:c + kw, :].flatten()
-
-    return regs.reshape([xh, xw, mb_size, kh, kw, xchn])
-
-
-def undo_ext_regions_for_conv(regs, x, kh, kw):
-    print("cnn undo_ext_regions_for_conv")
-    mb_size, xh, xw, xchn = x.shape
-
-    regs = regs.reshape([mb_size, xh, xw, kh, kw, xchn])
-    regs = regs.transpose([1, 2, 0, 3, 4, 5])
-
-    return undo_ext_regions(regs, kh, kw)
-
-
-def undo_ext_regions(regs, kh, kw):
-    print("cnn undo_ext_regions")
-    xh, xw, mb_size, kh, kw, xchn = regs.shape
-
-    eh, ew = xh + kh - 1, xw + kw - 1
-    bh, bw = (kh - 1) // 2, (kw - 1) // 2
-
-    gx_ext = np.zeros([mb_size, eh, ew, xchn], dtype='float32')
-
-    for r in range(xh):
-        for c in range(xw):
-            gx_ext[:, r:r + kh, c:c + kw, :] += regs[r, c]
-
-    return gx_ext[:, bh:bh + xh, bw:bw + xw, :]
