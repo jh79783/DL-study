@@ -1,12 +1,6 @@
-# from adam.adam_model import AdamModel
-import class_model.mathutil as mu
 import cnn.cnn_assist_function as cm
 import numpy as np
 from cnn.cnn_model_base import CnnModelBasic
-
-
-# from cnn.cnn_model import CnnModel
-
 
 
 class Fully(CnnModelBasic):
@@ -54,7 +48,6 @@ class Fully(CnnModelBasic):
         self.update_param(pm, 'b', G_bias)
 
         return G_input.reshape(x_org_shape)
-
 
 
 class Convolution(CnnModelBasic):
@@ -111,12 +104,12 @@ class Convolution(CnnModelBasic):
         x_ext[:, bh:bh + xh, bw:bw + xw, :] = x
 
         k_flat = pm['k'].transpose([3, 0, 1, 2]).reshape([ychn, -1])
-
         for n in range(mb_size):
             for r in range(xh):
                 for c in range(xw):
                     for ym in range(ychn):
                         xe_flat = x_ext[n, r:r + kh, c:c + kw, :].flatten()
+                        print(xe_flat.shape, k_flat.shape)
                         conv[n, r, c, ym] = (xe_flat * k_flat[ym]).sum()
 
         y = self.activate(conv + pm['b'], hconfig)
@@ -124,15 +117,12 @@ class Convolution(CnnModelBasic):
         return y, [x, y]
 
     def forward_conv_layer(self, x, hconfig, pm):
-        # print("cnn forward_conv_layer")
-
         mb_size, xh, xw, xchn = x.shape
         kh, kw, _, ychn = pm['k'].shape
 
         x_flat = cm.get_ext_regions_for_conv(x, kh, kw)
 
         k_flat = pm['k'].reshape([kh * kw * xchn, ychn])
-        print(x_flat.shape)
         conv_flat = np.matmul(x_flat, k_flat)
         conv = conv_flat.reshape([mb_size, xh, xw, ychn])
 
@@ -175,7 +165,6 @@ class Max_Pooling(CnnModelBasic):
         assert len(input_shape) == 3
         xh, xw, xchn = input_shape
         sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
-
         assert xh % sh == 0
         assert xw % sw == 0
 

@@ -1,7 +1,4 @@
 from adam.adam_model import AdamModel
-import class_model.mathutil as mu
-import cnn.cnn_assist_function as cm
-import numpy as np
 
 
 class CnnModelBasic(AdamModel):
@@ -29,5 +26,5 @@ class CnnModelBasic(AdamModel):
     def activate_derv(self, G_y, y, hconfig):
         pass
 
-    def visualize(self, num):
+    def load_visualize(self, num):
         pass

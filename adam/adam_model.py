@@ -5,12 +5,10 @@ import numpy as np
 
 class AdamModel(MlpModel):
     def __init__(self, name, dataset, mode, hconfigs, use_adam=True):
-        # print("adam model init")
         self.use_adam = use_adam
         super(AdamModel, self).__init__(name, dataset, mode, hconfigs)
 
     def backprop_layer(self, G_y, hconfig, pm, aux):
-        # print("adam backprop_layer")
         x, y = aux
         if hconfig is not None: G_y = mu.relu_derv(y) * G_y
 
@@ -27,7 +25,6 @@ class AdamModel(MlpModel):
         return G_input
 
     def update_param(self, pm, key, delta):
-        # print("adam update_param")
         if self.use_adam:  # True 이면 아담 업데이트 시작
             delta = self.eval_adam_delta(pm, key, delta)
         pm[key] -= self.learning_rate * delta

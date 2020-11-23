@@ -1,15 +1,11 @@
-from adam.adam_model import AdamModel
 import class_model.mathutil as mu
-import cnn.cnn_assist_function as cm
-import numpy as np
-
+import time
 from cnn.cnn_layer import *
-from cnn.cnn_model_base import CnnModelBasic
 
 
 class CnnModel(Fully,Convolution,Max_Pooling,Avg_Pooling):
-    def __init__(self, name, dataset, mode, hconfigs, show_maps=False, use_adam=True):
-        super(CnnModel, self).__init__(name, dataset, mode, hconfigs, show_maps, use_adam)
+    # def __init__(self, name, dataset, mode, hconfigs, show_maps=False, use_adam=True):
+    #     super(CnnModel, self).__init__(name, dataset, mode, hconfigs, show_maps, use_adam)
 
     def alloc_layer_param(self, input_shape, hconfig):
         # print("cnn alloc_layer_param")
@@ -18,11 +14,9 @@ class CnnModel(Fully,Convolution,Max_Pooling,Avg_Pooling):
         m_name = 'alloc_{}_layer'.format(layer_type)
         method = getattr(self, m_name)
         pm, output_shape = method(input_shape, hconfig)
-
         return pm, output_shape
 
     def forward_layer(self, x, hconfig, pm):
-        # print("cnn forward_layer")
         layer_type = cm.get_layer_type(hconfig)
         m_name = 'forward_{}_layer'.format(layer_type)
         method = getattr(self, m_name)
@@ -41,9 +35,7 @@ class CnnModel(Fully,Convolution,Max_Pooling,Avg_Pooling):
         return G_input
 
     def activate(self, affine, hconfig):
-        # print("cnn activate")
         if hconfig is None: return affine
-
         func = cm.get_conf_param(hconfig, 'actfunc', 'relu')
 
         if func == 'none':
@@ -74,16 +66,16 @@ class CnnModel(Fully,Convolution,Max_Pooling,Avg_Pooling):
         else:
             assert 0
 
-    def visualize(self, num):
-        # print("cnn visualize")
+    def load_visualize(self, num):
+        print("cnn visualize")
         print('Model {} Visualization'.format(self.name))
 
         self.need_maps = self.show_maps
         self.maps = []
 
-        deX, deY = self.dataset.get_visualize_data(num)
+        deX, deY = self.dataset.dataset_get_validate_data(num)
         est = self.get_estimate(deX)
-
+        print(self.show_maps)
         if self.show_maps:
             for kernel in self.kernels:
                 kh, kw, xchn, ychn = kernel.shape
@@ -98,5 +90,3 @@ class CnnModel(Fully,Convolution,Max_Pooling,Avg_Pooling):
         self.need_maps = False
         self.maps = None
 
-    # def alloc_full_layer(self, input_shape, hconfig):
-    #     pass

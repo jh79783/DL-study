@@ -18,7 +18,6 @@ class MlpModel(ModelBase):
             pm_hidden, prev_shape = self.alloc_layer_param(prev_shape, hconfig)
             self.pm_hiddens.append(pm_hidden)
         output_cnt = int(np.prod(self.dataset.output_shape))
-        print(output_cnt)
         self.pm_output, _ = self.alloc_layer_param(prev_shape, output_cnt)
 
     def alloc_layer_param(self, input_shape, hconfig):
@@ -26,7 +25,7 @@ class MlpModel(ModelBase):
         output_cnt = hconfig
         weight, bias = self.alloc_param_pair([input_cnt, output_cnt])
 
-        return {'w':weight, 'b':bias}, output_cnt
+        return {'w': weight, 'b': bias}, output_cnt
 
     def alloc_param_pair(self, shape):
         weight = np.random.normal(0, self.rand_std, shape)
@@ -46,15 +45,19 @@ class MlpModel(ModelBase):
             accs = []
             indices = self.dataset.dataset_shuffle_train_data()
             for n in range(batch_count):
-                trX, trY = self.dataset.dataset_get_train_data(batch_size, n,indices)
+                trX, trY = self.dataset.dataset_get_train_data(batch_size, n, indices)
                 cost, acc = self.train_step(trX, trY)
                 costs.append(cost)
                 accs.append(acc)
 
             if report > 0 and (epoch + 1) % report == 0:
                 vaX, vaY = self.dataset.dataset_get_validate_data(100)
-
-                acc = self.eval_accuracy(vaX, vaY)
+                accs_report = []
+                for n in range(batch_size):
+                    acc_report = self.eval_accuracy(vaX[10 * n:10 * (n + 1)], vaY[10 * n:10 * (n + 1)])
+                    accs_report.append(acc_report)
+                acc = np.mean(accs_report)
+                # acc_org = self.eval_accuracy(vaX, vaY)
                 time3 = int(time.time())
                 tm1, tm2 = time3 - time2, time3 - time1
                 self.dataset.dataset_train_prt_result(epoch + 1, costs, accs, acc, tm1, tm2)
@@ -66,7 +69,12 @@ class MlpModel(ModelBase):
     def test(self):
         teX, teY = self.dataset.dataset_get_test_data()
         time1 = int(time.time())
-        acc = self.eval_accuracy(teX, teY)
+        accs_report = []
+        for n in range(10):
+            acc_report = self.eval_accuracy(teX[10 * n:10 * (n + 1)], teY[10 * n:10 * (n + 1)])
+            accs_report.append(acc_report)
+        acc = np.mean(accs_report)
+        # acc_org = self.eval_accuracy(teX, teY)
         time2 = int(time.time())
         self.dataset.dataset_test_prt_result(self.name, acc, time2 - time1)
 
@@ -75,7 +83,6 @@ class MlpModel(ModelBase):
         deX, deY = self.dataset.dataset_get_validate_data(num)
         est = self.get_estimate(deX)
         self.dataset.visualize(deX, est, deY)
-
 
     def train_step(self, x, y):
         self.is_training = True
@@ -92,7 +99,6 @@ class MlpModel(ModelBase):
         return loss, accuracy
 
     def forward_neuralnet(self, x):
-        # print(x.shape)
         hidden = x
         aux_layers = []
 
@@ -102,7 +108,7 @@ class MlpModel(ModelBase):
         output, aux_out = self.forward_layer(hidden, None, self.pm_output)
         return output, [aux_out, aux_layers]
 
-    def backprop_neuralnet(self,G_output, aux):
+    def backprop_neuralnet(self, G_output, aux):
         aux_out, aux_layers = aux
 
         G_hidden = self.backprop_layer(G_output, None, self.pm_output, aux_out)
@@ -155,6 +161,7 @@ class MlpModel(ModelBase):
         pass
 
     def eval_accuracy(self, x, y, output=None):
+
         if output is None:
             output, _ = self.forward_neuralnet(x)
         accuracy = self.mode.eval_accuracy(x, y, output)
