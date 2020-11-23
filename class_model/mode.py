@@ -111,21 +111,17 @@ class Office_Select(Select):
 
         loss0, aux0 = self.mode_forward_postproc(outputs[0], ys[0])
         loss1, aux1 = self.mode_forward_postproc(outputs[1], ys[1])
-        # print(f"loss0{loss0} \n loss1 {loss1}")
         return loss0 + loss1, [aux0, aux1]
 
     def office_backprop_postproc(self, G_loss, aux):
-        # print("office dataset_backprop_postproc")
         aux0, aux1 = aux
 
         G_output0 = self.mode_backprop_postproc(G_loss, aux0)  # G_output0 (10, 3)
         G_output1 = self.mode_backprop_postproc(G_loss, aux1)  # G_output1 (10, 31)
-        # print(f"G_output {G_output0.shape}, {G_output1.shape}")
 
         return np.hstack([G_output0, G_output1])
 
     def office_eval_accuracy(self, x, y, output):
-        # print("office dataset_eval_accuracy")
         outputs, ys = np.hsplit(output, self.cnts), np.hsplit(y, self.cnts)
 
         acc0 = self.eval_accuracy(x, ys[0], outputs[0])

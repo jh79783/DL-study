@@ -49,14 +49,10 @@ class Office31Dataset(DatasetBase):
         self.cnts = [len(domain_names)]
 
     def visualize(self, xs, estimates, answers):
-        # print(" office visualize ")
-        # print(f"estimates{estimates}\n{answers}")
         mu.draw_images_horz(xs, self.image_shape)
-        # print(f"estimates type {type(estimates)} shape {estimates.shape}")
         ests, anss = np.hsplit(estimates, self.cnts), np.hsplit(answers, self.cnts)
 
         captions = ['도메인', '상품']
-        # print(f"self.target_names,{len(self.target_names[0])},\n,{len(self.target_names[1])}")
         for m in range(2):
             print('[ {} 추정결과 ]'.format(captions[m]))
             print(f"ests[{m}]{ests[m].shape}")
