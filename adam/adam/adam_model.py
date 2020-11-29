@@ -1,8 +1,9 @@
+import class_model.mathutil as mu
 import numpy as np
 
 
 class AdamModel:
-    def __init__(self, use_adam=False):
+    def __init__(self, use_adam=True):
         self.use_adam = use_adam
 
     def update_param(self, pm, key, delta,learning_rate = 0.001):

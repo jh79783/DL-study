@@ -55,4 +55,5 @@ class Office31Dataset(DatasetBase):
         captions = ['도메인', '상품']
         for m in range(2):
             print('[ {} 추정결과 ]'.format(captions[m]))
+            print(f"ests[{m}]{ests[m].shape}")
             mu.show_select_results(ests[m], anss[m], self.target_names[m], 8)

@@ -3,8 +3,8 @@ import class_model.mode as modelmode
 import class_model.mlp_model as mm
 import class_model.dataset as dataset
 import time
-
-np.random.seed(9999)
+#
+# np.random.seed(9999)
 
 # def randomize():
 #     np.random.seed(time.time())

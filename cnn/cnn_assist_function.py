@@ -1,5 +1,5 @@
 import numpy as np
-
+import class_model.mathutil as mu
 
 def get_layer_type(hconfig):
     if not isinstance(hconfig, list): return 'full'
@@ -13,12 +13,9 @@ def get_conf_param(hconfig, key, defval=None):
     return hconfig[1][key]
 
 
-def get_conf_param_2d(hconfig, key, defval=None):
-    if len(hconfig) <= 1: return defval
-    if not key in hconfig[1]: return defval
-    val = hconfig[1][key]
-    if isinstance(val, list): return val
-    return [val, val]
+def get_conf_param_2d(hconfig):
+    if isinstance(hconfig, list): return hconfig
+    if isinstance(hconfig, int): return [hconfig, hconfig]
 
 
 def get_ext_regions_for_conv(x, kh, kw):
@@ -68,3 +65,35 @@ def undo_ext_regions(regs, kh, kw):
             gx_ext[:, r:r + kh, c:c + kw, :] += regs[r, c]
 
     return gx_ext[:, bh:bh + xh, bw:bw + xw, :]
+
+def activate(affine,hconfig):
+
+    func = get_conf_param(hconfig, 'actfunc', 'relu')
+    # print(affine,func)
+    if func == 'none':
+        return affine
+    elif func == 'relu':
+        return mu.relu(affine)
+    elif func == 'sigmoid':
+        return mu.sigmoid(affine)
+    elif func == 'tanh':
+        return mu.tanh(affine)
+    else:
+        assert 0
+
+
+def activate_derv( G_y, y, hconfig):
+    if hconfig is None: return G_y
+
+    func = get_conf_param(hconfig, 'actfunc', 'relu')
+
+    if func == 'none':
+        return G_y
+    elif func == 'relu':
+        return mu.relu_derv(y) * G_y
+    elif func == 'sigmoid':
+        return mu.sigmoid_derv(y) * G_y
+    elif func == 'tanh':
+        return mu.tanh_derv(y) * G_y
+    else:
+        assert 0

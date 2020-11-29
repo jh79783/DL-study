@@ -1,21 +1,24 @@
 import cnn.cnn_assist_function as cm
 import numpy as np
-from cnn.cnn_model_base import CnnModelBasic
 
 
-class Fully(CnnModelBasic):
-    def alloc_full_layer(self, input_shape, hconfig):
-        # print("cnn alloc_full_layer")
+class Fully:
+    def __init__(self, width=None, actfunc='relu'):
+        if width is None: pass
+        self.output_cnt = width
+        self.actfunc = actfunc
+
+    def alloc_layer_param(self, input_shape, rand_std=0.030):
         input_cnt = np.prod(input_shape)
-        output_cnt = cm.get_conf_param(hconfig, 'width', hconfig)
+        # print(self.output_cnt)
+        # print(rand_std, [input_cnt, self.output_cnt])
+        weight = np.random.normal(0, rand_std, [input_cnt, self.output_cnt])
+        bias = np.zeros([self.output_cnt])
+        # print(weight)
+        return {'w': weight, 'b': bias}, [self.output_cnt]
 
-        weight = np.random.normal(0, self.rand_std, [input_cnt, output_cnt])
-        bias = np.zeros([output_cnt])
-
-        return {'w': weight, 'b': bias}, [output_cnt]
-
-    def forward_full_layer(self, x, hconfig, pm):
-        # print("cnn forward_full_layer")
+    def forward_layer(self, x, pm):
+        # print('fully forward_layer')
         if pm is None: return x, None
 
         x_org_shape = x.shape
@@ -25,17 +28,18 @@ class Fully(CnnModelBasic):
             x = x.reshape([mb_size, -1])
 
         affine = np.matmul(x, pm['w']) + pm['b']
-        y = self.activate(affine, hconfig)
+        # print(affine)
+        y = cm.activate(affine, self.actfunc)
+        # print(y)
 
         return y, [x, y, x_org_shape]
 
-    def backprop_full_layer(self, G_y, hconfig, pm, aux):
-        # print("cnn backprop_full_layer")
+    def backprop_layer(self, G_y, pm, aux):
         if pm is None: return G_y
 
         x, y, x_org_shape = aux
 
-        G_affine = self.activate_derv(G_y, y, hconfig)
+        G_affine = cm.activate_derv(G_y, y,self.actfunc)
 
         g_affine_weight = x.transpose()
         g_affine_input = pm['w'].transpose()
@@ -44,102 +48,56 @@ class Fully(CnnModelBasic):
         G_bias = np.sum(G_affine, axis=0)
         G_input = np.matmul(G_affine, g_affine_input)
 
-        self.update_param(pm, 'w', G_weight)
-        self.update_param(pm, 'b', G_bias)
-
-        return G_input.reshape(x_org_shape)
+        return G_input.reshape(x_org_shape), [G_weight, G_bias]
 
 
-class Convolution(CnnModelBasic):
-    def alloc_conv_layer(self, input_shape, hconfig):
+class Convolution:
+    def __init__(self, ksize, chn, actfunc='relu'):
+        self.kernels = []
+        if ksize is None: pass
+        self.ksize = ksize
+        self.chn = chn
+        self.actfunc = actfunc
+
+    def alloc_layer_param(self, input_shape, rand_std=0.030):
         assert len(input_shape) == 3
         xh, xw, xchn = input_shape
-        kh, kw = cm.get_conf_param_2d(hconfig, 'ksize')
-        ychn = cm.get_conf_param(hconfig, 'chn')
-
-        kernel = np.random.normal(0, self.rand_std, [kh, kw, xchn, ychn])
+        kh, kw = cm.get_conf_param_2d(self.ksize)
+        ychn = self.chn
+        # print(kh, kw)
+        # print(ychn)
+        kernel = np.random.normal(0, rand_std, [kh, kw, xchn, ychn])
         bias = np.zeros([ychn])
 
-        if self.show_maps: self.kernels.append(kernel)
+        # if self.show_maps: self.kernels.append(kernel)
 
         return {'k': kernel, 'b': bias}, [xh, xw, ychn]
 
-    def forward_conv_layer_adhoc(self, x, hconfig, pm):
-        # print("cnn forward_conv_layer_adhoc")
+    def forward_layer(self, x, pm):
+        # print('conv forward_layer')
         mb_size, xh, xw, xchn = x.shape
         kh, kw, _, ychn = pm['k'].shape
-
-        conv = np.zeros((mb_size, xh, xw, ychn))
-
-        for n in range(mb_size):
-            for r in range(xh):
-                for c in range(xw):
-                    for ym in range(ychn):
-                        for i in range(kh):
-                            for j in range(kw):
-                                rx = r + i - (kh - 1) // 2
-                                cx = c + j - (kw - 1) // 2
-                                if rx < 0 or rx >= xh: continue
-                                if cx < 0 or cx >= xw: continue
-                                for xm in range(xchn):
-                                    kval = pm['k'][i][j][xm][ym]
-                                    ival = x[n][rx][cx][xm]
-                                    conv[n][r][c][ym] += kval * ival
-
-        y = self.activate(conv + pm['b'], hconfig)
-
-        return y, [x, y]
-
-    def forward_conv_layer_better(self, x, hconfig, pm):
-        # print("cnn forward_conv_layer_better")
-        mb_size, xh, xw, xchn = x.shape
-        kh, kw, _, ychn = pm['k'].shape
-
-        conv = np.zeros((mb_size, xh, xw, ychn))
-
-        bh, bw = (kh - 1) // 2, (kw - 1) // 2
-        eh, ew = xh + kh - 1, xw + kw - 1
-
-        x_ext = np.zeros((mb_size, eh, ew, xchn))
-        x_ext[:, bh:bh + xh, bw:bw + xw, :] = x
-
-        k_flat = pm['k'].transpose([3, 0, 1, 2]).reshape([ychn, -1])
-        for n in range(mb_size):
-            for r in range(xh):
-                for c in range(xw):
-                    for ym in range(ychn):
-                        xe_flat = x_ext[n, r:r + kh, c:c + kw, :].flatten()
-                        print(xe_flat.shape, k_flat.shape)
-                        conv[n, r, c, ym] = (xe_flat * k_flat[ym]).sum()
-
-        y = self.activate(conv + pm['b'], hconfig)
-
-        return y, [x, y]
-
-    def forward_conv_layer(self, x, hconfig, pm):
-        mb_size, xh, xw, xchn = x.shape
-        kh, kw, _, ychn = pm['k'].shape
-
+        # print(kh,kw,ychn)
         x_flat = cm.get_ext_regions_for_conv(x, kh, kw)
 
         k_flat = pm['k'].reshape([kh * kw * xchn, ychn])
         conv_flat = np.matmul(x_flat, k_flat)
         conv = conv_flat.reshape([mb_size, xh, xw, ychn])
-
-        y = self.activate(conv + pm['b'], hconfig)
-
-        if self.need_maps: self.maps.append(y)
+        # y = conv + pm['b']
+        y = cm.activate(conv + pm['b'],self.actfunc)
+        #
+        # if self.need_maps: self.maps.append(y)
+        # print(y)
 
         return y, [x_flat, k_flat, x, y]
 
-    def backprop_conv_layer(self, G_y, hconfig, pm, aux):
-        # print("cnn backprop_conv_layer")
+    def backprop_layer(self, G_y, pm, aux):
         x_flat, k_flat, x, y = aux
 
         kh, kw, xchn, ychn = pm['k'].shape
         mb_size, xh, xw, _ = G_y.shape
 
-        G_conv = self.activate_derv(G_y, y, hconfig)
+        G_conv = cm.activate_derv(G_y, y, self.actfunc)
 
         G_conv_flat = G_conv.reshape(mb_size * xh * xw, ychn)
 
@@ -153,27 +111,28 @@ class Convolution(CnnModelBasic):
         G_kernel = G_k_flat.reshape([kh, kw, xchn, ychn])
         G_input = cm.undo_ext_regions_for_conv(G_x_flat, x, kh, kw)
 
-        self.update_param(pm, 'k', G_kernel)
-        self.update_param(pm, 'b', G_bias)
-
-        return G_input
+        return G_input, [G_kernel, G_bias]
 
 
-class Max_Pooling(CnnModelBasic):
-    def alloc_max_layer(self, input_shape, hconfig):
-        # print("cnn alloc_pool_layer")
+class Max_Pooling:
+    def __init__(self, stride,actfunc='relu'):
+        if stride is None: pass
+        self.stride = stride
+        self.actfunc = actfunc
+
+    def alloc_layer_param(self, input_shape):
         assert len(input_shape) == 3
         xh, xw, xchn = input_shape
-        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
+        sh, sw = cm.get_conf_param_2d(self.stride)
         assert xh % sh == 0
         assert xw % sw == 0
 
         return {}, [xh // sh, xw // sw, xchn]
 
-    def forward_max_layer(self, x, hconfig, pm):
-        # print("cnn forward_max_layer")
+    def forward_layer(self, x,  pm):
+        # print('max forward_layer ')
         mb_size, xh, xw, chn = x.shape
-        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
+        sh, sw = cm.get_conf_param_2d(self.stride)
         yh, yw = xh // sh, xw // sw
 
         x1 = x.reshape([mb_size, yh, sh, yw, sw, chn])
@@ -184,16 +143,15 @@ class Max_Pooling(CnnModelBasic):
         y_flat = x3[np.arange(mb_size * yh * yw * chn), idxs]
         y = y_flat.reshape([mb_size, yh, yw, chn])
 
-        if self.need_maps: self.maps.append(y)
+        # if self.need_maps: self.maps.append(y)
 
         return y, idxs
 
-    def backprop_max_layer(self, G_y, hconfig, pm, aux):
-        # print("cnn backprop_max_layer")
+    def backprop_layer(self, G_y,  pm, aux):
         idxs = aux
 
         mb_size, yh, yw, chn = G_y.shape
-        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
+        sh, sw = cm.get_conf_param_2d(self.stride)
         xh, xw = yh * sh, yw * sw
 
         gy_flat = G_y.flatten()
@@ -205,25 +163,30 @@ class Max_Pooling(CnnModelBasic):
 
         G_input = gx3.reshape([mb_size, xh, xw, chn])
 
-        return G_input
+        return G_input, None
 
 
-class Avg_Pooling(CnnModelBasic):
-    def alloc_avg_layer(self, input_shape, hconfig):
+class Avg_Pooling:
+    def __init__(self, stride,actfunc='relu'):
+        if stride is None: pass
+        self.stride = stride
+        self.actfunc = actfunc
+
+    def alloc_layer_param(self, input_shape):
         # print("cnn alloc_pool_layer")
         assert len(input_shape) == 3
         xh, xw, xchn = input_shape
-        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
+        sh, sw = cm.get_conf_param_2d(self.stride)
 
         assert xh % sh == 0
         assert xw % sw == 0
 
         return {}, [xh // sh, xw // sw, xchn]
 
-    def forward_avg_layer(self, x, hconfig, pm):
-        # print("cnn forward_avg_layer")
+    def forward_layer(self, x,  pm):
+        # print("avg forward_layer")
         mb_size, xh, xw, chn = x.shape
-        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
+        sh, sw = cm.get_conf_param_2d(self.stride)
         yh, yw = xh // sh, xw // sw
 
         x1 = x.reshape([mb_size, yh, sh, yw, sw, chn])
@@ -233,14 +196,14 @@ class Avg_Pooling(CnnModelBasic):
         y_flat = np.average(x3, 1)
         y = y_flat.reshape([mb_size, yh, yw, chn])
 
-        if self.need_maps: self.maps.append(y)
+        # if self.need_maps: self.maps.append(y)
 
         return y, None
 
-    def backprop_avg_layer(self, G_y, hconfig, pm, aux):
+    def backprop_layer(self, G_y,  pm, aux):
         # print("cnn backprop_avg_layer")
         mb_size, yh, yw, chn = G_y.shape
-        sh, sw = cm.get_conf_param_2d(hconfig, 'stride')
+        sh, sw = cm.get_conf_param_2d(self.stride)
         xh, xw = yh * sh, yw * sw
 
         gy_flat = G_y.flatten() / (sh * sw)
@@ -253,4 +216,4 @@ class Avg_Pooling(CnnModelBasic):
 
         G_input = gx3.reshape([mb_size, xh, xw, chn])
 
-        return G_input
+        return G_input , None
