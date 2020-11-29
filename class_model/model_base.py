@@ -1,8 +1,9 @@
 class ModelBase:
-    def __init__(self, name, dataset, mode):
+    def __init__(self, name, dataset, mode, optimizer):
         self.name = name
         self.mode = mode
         self.dataset = dataset
+        self.optimizer = optimizer
         self.is_training = False
         if not hasattr(self, 'rand_std'):
             self.rand_std = 0.030
@@ -34,7 +35,7 @@ class ModelBase:
     def load_visualize(self, num):
         pass
 
-    def train_step(self,x ,y):
+    def train_step(self, x, y):
         pass
 
     def forward_neuralnet(self, x):

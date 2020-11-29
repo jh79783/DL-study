@@ -2,11 +2,12 @@ from class_model.model_base import ModelBase
 import class_model.mathutil as mu
 import numpy as np
 import time
+from adam.adam_model import AdamModel
 
 
 class MlpModel(ModelBase):
-    def __init__(self, name, dataset, mode, hconfigs):
-        super(MlpModel, self).__init__(name, dataset, mode)
+    def __init__(self, name, dataset, mode, hconfigs, optimizer = AdamModel()):
+        super(MlpModel, self).__init__(name, dataset, mode,optimizer)
         self.init_parameters(hconfigs)
 
     def init_parameters(self, hconfigs):
@@ -117,7 +118,7 @@ class MlpModel(ModelBase):
             hconfig, pm, aux = self.hconfigs[n], self.pm_hiddens[n], aux_layers[n]
             G_hidden = self.backprop_layer(G_hidden, hconfig, pm, aux)
 
-        return G_hidden
+
 
     def forward_layer(self, x, hconfig, pm):
         y = np.matmul(x, pm['w']) + pm['b']
@@ -138,8 +139,9 @@ class MlpModel(ModelBase):
         G_bias = np.sum(G_y, axis=0)
         G_input = np.matmul(G_y, g_y_input)
 
-        pm['w'] -= self.learning_rate * G_weight
-        pm['b'] -= self.learning_rate * G_bias
+        self.optimizer.update_param(pm, 'w', G_weight,self.learning_rate)  # pm['w'] -= self.learning_rate * G_weight
+        self.optimizer.update_param(pm, 'b', G_bias,self.learning_rate)  # pm['b'] -= self.learning_rate * G_bias
+
 
         return G_input
 
