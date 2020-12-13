@@ -1,9 +1,7 @@
-import numpy as np
 import class_model.mode as modelmode
 import class_model.mlp_model as mm
-import class_model.dataset as dataset
 from adam.adam_model import AdamModel
-import adam.dataset_office31 as do
+import dataset.dataset_office31 as do
 
 
 # np.random.seed(1234)

@@ -2,14 +2,15 @@ from cnn.cnn_model import CnnModel
 import class_model.mode as modelmode
 from adam.adam_model import AdamModel
 from dataset.dataset_office31 import Office31Dataset
+from dataset.dataset import *
 
 
 def main():
-    fd = Office31Dataset([96, 96], [96, 96, 3])
-    mode = modelmode.Office_Select(fd.cnts)
+    # fd = Office31Dataset([96, 96], [96, 96, 3])
+    # mode = modelmode.Office_Select(fd.cnts)
 
-    # fd = dataset.Flower_DataSet([96, 96], [96, 96, 3])
-    # mode = modelmode.Select()
+    fd = Flower_DataSet([96, 96], [96, 96, 3])
+    mode = modelmode.Select()
     hconfigs = dict()
     # hconfigs['Fully1'] = Fully(**{'width': 64})
     # hconfigs['Fully2'] = Fully(**{'width': 32})
