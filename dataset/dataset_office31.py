@@ -7,7 +7,6 @@ import numpy as np
 # noinspection PyCallByClass
 class Office31Dataset(DatasetBase):
     def __init__(self, resolution=None, input_shape=None):
-
         super(Office31Dataset, self).__init__()
 
         if resolution is None:
@@ -55,5 +54,13 @@ class Office31Dataset(DatasetBase):
         captions = ['도메인', '상품']
         for m in range(2):
             print('[ {} 추정결과 ]'.format(captions[m]))
-            print(f"ests[{m}]{ests[m].shape}")
             mu.show_select_results(ests[m], anss[m], self.target_names[m], 8)
+
+    def dataset_train_prt_result(self, epoch, costs, accs, acc, time1, time2):
+        acc_pair = np.mean(accs, axis=0)
+        print(
+            f"    Epoch {epoch}: cost={np.mean(costs):5.3f}, accuracy={acc_pair[0]:5.3f}"
+            f"+{acc_pair[1]:5.3f}/{acc[0]:5.3f}+{acc[1]:5.3f} ({time1}/{time2} secs)")
+
+    def dataset_test_prt_result(self, name, acc, time):
+        print(f'Model {name} test report: accuracy = {acc[0]:5.3f}+{acc[1]:5.3f}, ({time} secs)\n')
