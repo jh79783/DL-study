@@ -1,4 +1,4 @@
-from class_model.dataset_base import DatasetBase
+from dataset.dataset_base import DatasetBase
 import class_model.mathutil as mu
 import os
 import numpy as np

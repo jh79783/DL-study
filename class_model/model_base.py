@@ -17,7 +17,7 @@ class ModelBase:
         if show_cnt > 0:
             self.load_visualize(show_cnt)
 
-    def init_parameters(self, hconfigs):
+    def init_parameters(self):
         pass
 
     def alloc_layer_param(self, input_shape, hconfig):
@@ -41,7 +41,7 @@ class ModelBase:
     def forward_neuralnet(self, x):
         pass
 
-    def backprop_neuralnet(self, G_output, aux):
+    def backprop_neuralnet(self, G_output, aux=None):
         pass
 
     def forward_layer(self, x, hconfig, pm):
@@ -53,13 +53,7 @@ class ModelBase:
     def forward_postproc(self, output, y):
         pass
 
-    def forward_extra_cost(self, y):
-        pass
-
     def backprop_postproc(self, G_loss, aux):
-        pass
-
-    def backprop_extra_cost(self, G_loss, aux):
         pass
 
     def eval_accuracy(self, x, y, output=None):

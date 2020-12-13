@@ -69,7 +69,6 @@ def undo_ext_regions(regs, kh, kw):
 def activate(affine,hconfig):
 
     func = get_conf_param(hconfig, 'actfunc', 'relu')
-    # print(affine,func)
     if func == 'none':
         return affine
     elif func == 'relu':
@@ -82,9 +81,8 @@ def activate(affine,hconfig):
         assert 0
 
 
-def activate_derv( G_y, y, hconfig):
+def activate_derv(G_y, y, hconfig):
     if hconfig is None: return G_y
-
     func = get_conf_param(hconfig, 'actfunc', 'relu')
 
     if func == 'none':

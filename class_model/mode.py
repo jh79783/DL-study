@@ -70,27 +70,27 @@ class Binary(ModeBase):
 
 
 class Select(ModeBase):
-    def mode_forward_postproc(self, output, y):
-        entropy = mu.softmax_cross_entropy_with_logits(y, output)
+    def mode_forward_postproc(self, feature, train_y):
+        entropy = mu.softmax_cross_entropy_with_logits(train_y, feature)
         loss = np.mean(entropy)
-        aux = [output, y, entropy]
+        aux = [feature, train_y, entropy]
 
         return loss, aux
 
     def mode_backprop_postproc(self, G_loss, aux):
-        output, y, entropy = aux
+        feature, train_y, entropy = aux
 
         g_loss_entropy = 1.0 / np.prod(entropy.shape)
-        g_entropy_output = mu.softmax_cross_entropy_with_logits_derv(y, output)
+        g_entropy_output = mu.softmax_cross_entropy_with_logits_derv(train_y, feature)
 
         G_entropy = g_loss_entropy * G_loss
         G_output = g_entropy_output * G_entropy
 
         return G_output
 
-    def eval_accuracy(self, x, y, output):
-        estimate = np.argmax(output, axis=1)
-        answer = np.argmax(y, axis=1)
+    def eval_accuracy(self, train_x, train_y, feature):
+        estimate = np.argmax(feature, axis=1)
+        answer = np.argmax(train_y, axis=1)
         correct = np.equal(estimate, answer)
         accuracy = np.mean(correct)
 
@@ -101,30 +101,64 @@ class Select(ModeBase):
         return estimate
 
 
-class Office_Select(Select):
+class Office_Select(ModeBase):
     def __init__(self, cnts):
         self.cnts = cnts
 
-    def office_forward_postproc(self, output, y):
-        # print("office dataset_forward_postproc")
-        outputs, ys = np.hsplit(output, self.cnts), np.hsplit(y, self.cnts)
+    def mode_forward_postproc(self,feature, train_y):
+        features, ys = np.hsplit(feature, self.cnts), np.hsplit(train_y, self.cnts)
+        losses = list()
+        auxs = list()
+        for i in range(2):
+            entropy = mu.softmax_cross_entropy_with_logits(ys[i], features[i])
 
-        loss0, aux0 = self.mode_forward_postproc(outputs[0], ys[0])
-        loss1, aux1 = self.mode_forward_postproc(outputs[1], ys[1])
-        return loss0 + loss1, [aux0, aux1]
+            # print(f"feature:{features[i].shape}")
+            loss = np.mean(entropy)
+            aux = [features[i], ys[i], entropy]
+            losses.append(loss)
+            auxs.append(aux)
 
-    def office_backprop_postproc(self, G_loss, aux):
-        aux0, aux1 = aux
 
-        G_output0 = self.mode_backprop_postproc(G_loss, aux0)  # G_output0 (10, 3)
-        G_output1 = self.mode_backprop_postproc(G_loss, aux1)  # G_output1 (10, 31)
+        return losses, auxs
+        # # print("office dataset_forward_postproc")
+        #
+        #
+        # loss0, aux0 = self.mode_forward_postproc(outputs[0], ys[0])
+        # loss1, aux1 = self.mode_forward_postproc(outputs[1], ys[1])
+        # return loss0 + loss1, [aux0, aux1]
 
-        return np.hstack([G_output0, G_output1])
+    def mode_backprop_postproc(self, G_loss, aux):
+        G_outputs =list()
+        for i in range(2):
+            feature, train_y, entropy = aux[i]
 
-    def office_eval_accuracy(self, x, y, output):
-        outputs, ys = np.hsplit(output, self.cnts), np.hsplit(y, self.cnts)
+            g_loss_entropy = 1.0 / np.prod(entropy.shape)
+            g_entropy_output = mu.softmax_cross_entropy_with_logits_derv(train_y, feature)
 
-        acc0 = self.eval_accuracy(x, ys[0], outputs[0])
-        acc1 = self.eval_accuracy(x, ys[1], outputs[1])
+            G_entropy = g_loss_entropy * G_loss
+            G_output = g_entropy_output * G_entropy
+            G_outputs.append(G_output)
 
-        return [acc0, acc1]
+        G_outputs0 = G_outputs[0]
+        G_outputs1 = G_outputs[1]
+        return np.hstack([G_outputs0, G_outputs1])
+
+    def eval_accuracy(self, train_x, train_Y, feature):
+
+        accs = list()
+        outputs, ys = np.hsplit(feature, self.cnts), np.hsplit(train_Y, self.cnts)
+        for i in range(2):
+            estimate = np.argmax(outputs[i], axis=1)
+            answer = np.argmax(ys[i], axis=1)
+            correct = np.equal(estimate, answer)
+            accuracy = np.mean(correct)
+            accs.append(accuracy)
+
+        # acc0 = self.eval_accuracy(x, ys[0], outputs[0])
+        # acc1 = self.eval_accuracy(x, ys[1], outputs[1])
+        # print(acc0,acc1)
+        return accs
+
+    def get_estimate(self, output):
+        estimate = mu.softmax(output)
+        return estimate

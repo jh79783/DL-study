@@ -12,6 +12,13 @@ class AdamModel:
         pm[key] -= learning_rate * delta
 
     def eval_adam_delta(self, pm, key, delta):
+        """
+
+        :param pm: layer parameters [batch, height, width, channel]
+        :param key:
+        :param delta:
+        :return:
+        """
         ro_1 = 0.9
         ro_2 = 0.999
         epsilon = 1.0e-8

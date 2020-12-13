@@ -1,4 +1,4 @@
-from class_model.dataset_base import DatasetBase
+from dataset.dataset_base import DatasetBase
 import class_model.mathutil as mu
 import numpy as np
 import os
@@ -30,6 +30,15 @@ class Abalone_DataSet(DatasetBase):
             xstr = mu.vector_to_str(x, '%4.2f')
             print('{} => 추정 {:4.1f} : 정답 {:4.1f}'.format(xstr, est[0], ans[0]))
 
+    # def dataset_train_prt_result(self, epoch, costs, accs, acc, time1, time2):
+    #     print('    Epoch {}: cost={:5.3f}, accuracy={:5.3f}/{:5.3f} ({}/{} secs)'.format(epoch, np.mean(costs),
+    #                                                                                      np.mean(accs), acc, time1,
+    #                                                                                      time2))
+    #
+    # def dataset_test_prt_result(self, name, acc, time):
+    #     print('Model {} test report: accuracy = {:5.3f}, ({} secs)\n'.format(name, acc, time))
+    #
+
 
 class Pulsar_DataSet(DatasetBase):
     def __init__(self):
@@ -49,6 +58,14 @@ class Pulsar_DataSet(DatasetBase):
             if estr != astr: rstr = 'X'
             print('{} => 추정 {}(확률 {:4.2f}) : 정답 {} => {}'.format(xstr, estr, est[0], astr, rstr))
 
+    # def dataset_train_prt_result(self, epoch, costs, accs, acc, time1, time2):
+    #     print('    Epoch {}: cost={:5.3f}, accuracy={:5.3f}/{:5.3f} ({}/{} secs)'.format(epoch, np.mean(costs),
+    #                                                                                      np.mean(accs), acc, time1,
+    #                                                                                      time2))
+    #
+    # def dataset_test_prt_result(self, name, acc, time):
+    #     print('Model {} test report: accuracy = {:5.3f}, ({} secs)\n'.format(name, acc, time))
+
 
 class Steel_DataSet(DatasetBase):
     def __init__(self):
@@ -62,6 +79,15 @@ class Steel_DataSet(DatasetBase):
     def visualize(self, xs, estimates, answers):
         mu.show_select_results(estimates, answers, self.target_names)
 
+    # def dataset_train_prt_result(self, epoch, costs, accs, acc, time1, time2):
+    #     print('    Epoch {}: cost={:5.3f}, accuracy={:5.3f}/{:5.3f} ({}/{} secs)'.format(epoch, np.mean(costs),
+    #                                                                                      np.mean(accs), acc, time1,
+    #                                                                                      time2))
+    #
+    # def dataset_test_prt_result(self, name, acc, time):
+    #     print('Model {} test report: accuracy = {:5.3f}, ({} secs)\n'.format(name, acc, time))
+    #
+
 
 class Pulsar_Select_DataSet(DatasetBase):
     def __init__(self):
@@ -73,6 +99,15 @@ class Pulsar_Select_DataSet(DatasetBase):
 
     def visualize(self, xs, estimates, answers):
         mu.show_select_results(estimates, answers, self.target_names)
+
+    # def dataset_train_prt_result(self, epoch, costs, accs, acc, time1, time2):
+    #     print('    Epoch {}: cost={:5.3f}, accuracy={:5.3f}/{:5.3f} ({}/{} secs)'.format(epoch, np.mean(costs),
+    #                                                                                      np.mean(accs), acc, time1,
+    #                                                                                      time2))
+    #
+    # def dataset_test_prt_result(self, name, acc, time):
+    #     print('Model {} test report: accuracy = {:5.3f}, ({} secs)\n'.format(name, acc, time))
+    #
 
 
 class Flower_DataSet(DatasetBase):
@@ -107,3 +142,12 @@ class Flower_DataSet(DatasetBase):
     def visualize(self, xs, estimates, answers):
         mu.draw_images_horz(xs, self.image_shape)
         mu.show_select_results(estimates, answers, self.target_names)
+
+    def dataset_train_prt_result(self, epoch, costs, accs, acc, time1, time2):
+        print("flaoer")
+        print('    Epoch {}: cost={:5.3f}, accuracy={:5.3f}/{:5.3f} ({}/{} secs)'.format(epoch, np.mean(costs),
+                                                                                         np.mean(accs), acc, time1,
+                                                                                         time2))
+
+    def dataset_test_prt_result(self, name, acc, time):
+        print('Model {} test report: accuracy = {:5.3f}, ({} secs)\n'.format(name, acc, time))

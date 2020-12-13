@@ -57,3 +57,13 @@ Fully-Connected-Layer_3 : FC_3에서는 1000개의 뉴런이되며 이때 parame
 따라서 convolution layer에서 순전파를 진행하는데 연산량은 총 13,547,520이며 한개의 노드당 4bytes를 소요하므로 13,547,520\*4 = 54,190,080 \~=51.68MB이다. 또한 역전파를 포함하게되면 51.68MB\* = 103.36MB이다.
 
 또한 학습가능한 파라미터의 갯수는 모두 합쳐서 138,344,128개이다.
+
+
+
+
+
+앞에서 언급했던 momentum과 RMSProp을 섞은 기법입니다. 따라서 하이퍼파라미터도 그만큼 많습니다. 모멘텀에서서 사용하는 계수와 학습률에 대한 계수가 사용됩니다. 학습률을 줄여나가고 속도를 계산하여 학습의 갱신강도를 적응적으로 조정해나가는 방법입니다.
+
+$$ m \leftarrow \beta_1 m + (1 -\beta_1){\partial L \over \partial W}\\ v \leftarrow \beta_2 v + (1 - \beta_2)\left({\partial L \over \partial W}\right)^2\\ \hat{m} \leftarrow m/(1- \beta_1) \\ \\ \ \hat{v} \leftarrow v/(1-\beta_2)\\ W = W - \eta{\hat{m} \over \sqrt {\hat v +e}} $$ 
+
+자세한 내용은 아래 링크에 논문이 있습니다.
